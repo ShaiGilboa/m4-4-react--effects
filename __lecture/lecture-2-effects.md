@@ -141,6 +141,23 @@ const App = () => {
 }
 ```
 
+```js
+const App = () => {
+  const [cart, setCart] = React.useState({});
+
+  React.useEffect(() => {
+      fetch('some-url')
+        .then(data => {
+          console.log('Got data:', data);
+          setCart(data);
+        });
+    
+      return JSON.stringify(cart, null, 2);
+  }, []);
+  
+  //this way i will only be called one 'mount', first time it loads
+}
+```
 ---
 
 **Tip:** Use an empty dependency array to _only_ run the fetch on mount
@@ -157,7 +174,9 @@ Update the following snippets to make use of `useEffect`
 const App = () => {
   const [count, setCount] = React.useState(0);
 
-  document.title = `You have clicked ${count} times`;
+  React.useEffect(()=>{
+    document.title = `You have clicked ${count} times`;
+  },[count]);
 
   return (
     <button onClick={() => setCount(count + 1)}>
@@ -173,8 +192,13 @@ const App = () => {
 const App = ({ color }) => {
   const [value, setValue] = React.useState(false);
 
-  window.localStorage.setItem('value', value);
-  window.localStorage.setItem('color', color);
+  React.useState(()=>{
+    window.localStorage.setItem('value', value);
+  },[value])
+  
+  React.useState(()=>{
+    window.localStorage.setItem('color', color);
+  },[color])
 
   return (
     <div>
@@ -191,11 +215,13 @@ const App = ({ color }) => {
 
 ```js
 const Modal = ({ handleClose }) => {
-  window.addEventListener('keydown', (ev) => {
-    if (ev.code === 'Escape') {
-      handleClose();
-    }
-  });
+  React.useEffect(()=>{
+    window.addEventListener('keydown', (ev) => {
+      if (ev.code === 'Escape') {
+        handleClose();
+      }
+    });
+  },[]);
 
   return (
     <div>
@@ -315,9 +341,13 @@ Make sure to do the appropriate cleanup work
 // seTimeout is similar to setInterval...
 const App = () => {
   React.useEffect(() => {
-    window.setTimeout(() => {
+    const timer = window.setTimeout((time) => {
       console.log('1 second after update!')
-    });
+    },1000);
+
+    return () => {
+      clearTimeout(timer)
+    }
   }, [])
 
   return null;
@@ -328,10 +358,13 @@ const App = () => {
 
 ```js
 const App = () => {
-  React.useEffect(() => {
-    window.addEventListener('keydown', (ev) => {
+  const handleKeyDown = (ev) => {
       console.log('You pressed: ' + ev.code);
-    })
+    });
+  React.useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+
+    return ()=>window.removeEventListener('keydown', handleKeyDown);
   }, [])
 
   return null;
@@ -403,6 +436,36 @@ const App = ({ path }) => {
 
 ```js
 // refactoring time...
+const useMousePos = () => {
+  const [mousePosition, setMousePosition] = React.useState({
+    x: null,
+    y: null
+  });
+
+  React.useEffect(() => {
+    const handleMousemove = (ev) => {
+      setMousePosition({ x: ev.clientX, y: ev.clientY });
+    };
+
+    window.addEventListener('mousemove', handleMousemove);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMousemove)
+    }
+  }, []);
+
+  return mousePosition;
+}
+
+const App = ({ path }) => {
+    const mousePosition = useMousePos();
+
+    return (
+    <div>
+      The mouse is at {mousePosition.x}, {mousePosition.y}.
+    </div>
+  )
+}
 
 ```
 </div>
@@ -435,7 +498,32 @@ const App = ({ path }) => {
   );
 }
 ```
+```js
+const useData = (path) => {
+  const [data, setData] = React.useState(null);
 
+  //asybc by nature
+  React.useEffect(() => {
+    fetch(path)
+      .then(res => res.json())
+      .then(json => {
+        setData(json);
+      })
+  }, [path])
+
+  return data;
+}
+
+const App = ({ path }) => {
+  const data = useData(path);
+
+  return (
+    <span>
+      Data: {JSON.stringify(data)}
+    </span>
+  );
+}
+```
 ---
 
 ```js live=true
@@ -464,6 +552,37 @@ const Time = ({ throttleDuration }) => {
 render(<Time throttleDuration={1000} />)
 ```
 
+```js live=true
+const useTime = (throttleDuration) => {
+  const [time, setTime] = React.useState(
+    new Date()
+  );
+
+  React.useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setTime(new Date());
+    }, throttleDuration);
+
+    return () => {
+      window.clearInterval(intervalId);
+    }
+  }, [throttleDuration])
+
+  return time;
+}
+
+const Time = ({ throttleDuration }) => {
+  const time = useTime(throttleDuration)
+
+  return (
+    <span>
+      It is currently<br />{time.toTimeString()}
+    </span>
+  );
+}
+
+render(<Time throttleDuration={1000} />)
+```
 ---
 
 [Next lecture: Refs](../lecture-3-refs)

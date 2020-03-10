@@ -95,6 +95,29 @@ const Button = ({ type, children }) => {
   }
 };
 ```
+```js
+const Button = ({ type, children }) => {
+  const [color, setColor] = React.useState('red');
+  if (type === 'primary') {
+    return (
+      <button
+        style={{ color }}
+        onMouseEnter={() => {
+          setColor('purple');
+        }}
+        onMouseLeave={() => {
+          setColor('red');
+        }}
+      >
+        {children}
+      </button>
+    );
+  } else {
+    return <button style={{ backgroundColor: 'purple' }}>{children}</button>;
+  }
+};
+```
+
 
 ---
 

@@ -60,7 +60,7 @@ const Form = () => {
     <>
       <label>
         First Name
-        <input ref={firstNameRef} />
+        <input ref={firstNameRef} /> // this sets the value of 'firstNameRef' to <input />
       </label>
       <br />
       <label>
@@ -98,15 +98,12 @@ Use `useRef`
 
 ```js
 const ConfirmButton = () => {
+  const btnRef = React.useRef(null)
   React.useEffect(() => {
-    const btn = document.getElementById('confirm-button');
-
-    if (btn) {
-      btn.focus();
-    }
+    if(btnRef)btnRef.current.focus();
   }, []);
 
-  return <button id="confirm-button">Confirm</button>;
+  return <button id="confirm-button" ref={btnRef}>Confirm</button>;
 };
 ```
 
